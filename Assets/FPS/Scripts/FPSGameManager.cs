@@ -35,7 +35,22 @@ namespace FPSGame
 
             Instance = this;
         }
-
+void Start()
+{
+    if (_playerHealth == null)
+    {
+        foreach (FPSHealth health in FindObjectsByType<FPSHealth>(FindObjectsSortMode.None))
+        {
+            if (health.isPlayer)
+            {
+                _playerHealth = health;
+                _playerWeapon = health.GetComponent<FPSWeapon>();
+                playerSpawnPosition = health.transform.position;
+                break;
+            }
+        }
+    }
+}
         public void RegisterPlayer(FPSHealth health, FPSWeapon weapon)
         {
             _playerHealth = health;
