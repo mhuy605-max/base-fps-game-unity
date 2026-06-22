@@ -511,6 +511,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 87b770bc-feea-4e2a-ab3a-18c52de21446
     m_ActionName: 'PlayerControls/Sprint[/Keyboard/leftShift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d45379c4-4d07-474e-8f98-0485a02ee1b1
+    m_ActionName: 'PlayerControls/Reload[/Keyboard/r]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerControls

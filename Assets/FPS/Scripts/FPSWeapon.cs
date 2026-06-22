@@ -61,6 +61,12 @@ namespace FPSGame
             if (context.performed)
                 TryFire();
         }
+
+        public void OnReload(InputAction.CallbackContext context)
+{
+    if (context.performed)
+        StartReload();
+}
 #endif
 
         void TryFire()
