@@ -25,22 +25,12 @@ namespace FPSGame
         bool _reloading;
         LineRenderer _line;
 
-#if ENABLE_INPUT_SYSTEM
-        Mouse _mouse;
-        Keyboard _keyboard;
-#endif
-
         void Awake()
         {
             _ammo = magazineSize;
 
             if (aimCamera == null)
                 aimCamera = GetComponentInChildren<Camera>();
-
-#if ENABLE_INPUT_SYSTEM
-            _mouse = Mouse.current;
-            _keyboard = Keyboard.current;
-#endif
 
             _line = gameObject.AddComponent<LineRenderer>();
             _line.positionCount = 2;
@@ -54,13 +44,6 @@ namespace FPSGame
 
         void Update()
         {
-#if ENABLE_INPUT_SYSTEM
-            if (_mouse == null)
-                return;
-
-            if (_keyboard != null && _keyboard.rKey.wasPressedThisFrame)
-                StartReload();
-
             if (_reloading)
             {
                 if (Time.time >= _reloadEndTime)
@@ -70,27 +53,15 @@ namespace FPSGame
                 }
                 return;
             }
-
-            if (_mouse.leftButton.wasPressedThisFrame)
-                TryFire();
-#else
-            if (Input.GetKeyDown(KeyCode.R))
-                StartReload();
-
-            if (_reloading)
-            {
-                if (Time.time >= _reloadEndTime)
-                {
-                    _ammo = magazineSize;
-                    _reloading = false;
-                }
-                return;
-            }
-
-            if (Input.GetMouseButtonDown(0))
-                TryFire();
-#endif
         }
+
+#if ENABLE_INPUT_SYSTEM
+        public void OnShoot(InputAction.CallbackContext context)
+        {
+            if (context.performed)
+                TryFire();
+        }
+#endif
 
         void TryFire()
         {

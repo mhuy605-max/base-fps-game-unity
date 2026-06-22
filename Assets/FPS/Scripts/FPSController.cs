@@ -27,11 +27,10 @@ namespace FPSGame
         float _pitch;
         float _verticalVelocity;
         bool _grounded;
-
-#if ENABLE_INPUT_SYSTEM
-        Keyboard _keyboard;
-        Mouse _mouse;
-#endif
+        bool _isSprinting;
+        bool _jumpRequested;
+        Vector2 _movementInput;
+        Vector2 _lookInput;
 
         void Awake()
         {
@@ -44,11 +43,6 @@ namespace FPSGame
                     cameraRoot = cam.transform;
             }
 
-#if ENABLE_INPUT_SYSTEM
-            _keyboard = Keyboard.current;
-            _mouse = Mouse.current;
-#endif
-
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
@@ -60,6 +54,32 @@ namespace FPSGame
             Move();
         }
 
+#if ENABLE_INPUT_SYSTEM
+        public void OnMovement(InputAction.CallbackContext context)
+        {
+            _movementInput = context.ReadValue<Vector2>();
+        }
+
+        public void OnLook(InputAction.CallbackContext context)
+        {
+            _lookInput = context.ReadValue<Vector2>();
+        }
+
+        public void OnJump(InputAction.CallbackContext context)
+        {
+            if (context.performed)
+                _jumpRequested = true;
+        }
+
+        public void OnSprint(InputAction.CallbackContext context)
+        {
+            if (context.performed)
+                _isSprinting = true;
+            else if (context.canceled)
+                _isSprinting = false;
+        }
+#endif
+
         void GroundedCheck()
         {
             Vector3 origin = transform.position + Vector3.up * groundedOffset;
@@ -69,10 +89,7 @@ namespace FPSGame
         void Look()
         {
 #if ENABLE_INPUT_SYSTEM
-            if (_mouse == null)
-                return;
-
-            Vector2 delta = _mouse.delta.ReadValue();
+            Vector2 delta = _lookInput;
             float yaw = delta.x * mouseSensitivity * 0.1f;
             float pitch = -delta.y * mouseSensitivity * 0.1f;
 #else
@@ -90,25 +107,19 @@ namespace FPSGame
         void Move()
         {
 #if ENABLE_INPUT_SYSTEM
-            if (_keyboard == null)
-                return;
-
-            float h = (_keyboard.dKey.isPressed ? 1f : 0f) - (_keyboard.aKey.isPressed ? 1f : 0f);
-            float v = (_keyboard.wKey.isPressed ? 1f : 0f) - (_keyboard.sKey.isPressed ? 1f : 0f);
-            bool sprint = _keyboard.leftShiftKey.isPressed;
-            bool jump = _keyboard.spaceKey.wasPressedThisFrame;
+            Vector2 movement = _movementInput;
+            bool jump = _jumpRequested;
+            _jumpRequested = false;
 #else
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
-            bool sprint = Input.GetKey(KeyCode.LeftShift);
+            Vector2 movement = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             bool jump = Input.GetButtonDown("Jump");
 #endif
 
-            Vector3 move = transform.right * h + transform.forward * v;
+            Vector3 move = transform.right * movement.x + transform.forward * movement.y;
             if (move.sqrMagnitude > 1f)
                 move.Normalize();
 
-            float speed = sprint ? sprintSpeed : walkSpeed;
+            float speed = _isSprinting ? sprintSpeed : walkSpeed;
             _controller.Move(move * speed * Time.deltaTime);
 
             if (_grounded && _verticalVelocity < 0f)
