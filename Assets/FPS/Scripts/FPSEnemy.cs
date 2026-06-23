@@ -12,25 +12,33 @@ namespace FPSGame
 
         Transform _player;
         FPSHealth _health;
+        Animator _animator;
         float _nextAttackTime;
 
         void Awake()
         {
             _health = GetComponent<FPSHealth>();
+            _animator = GetComponent<Animator>();
             FindPlayer();
         }
 
         void Update()
         {
             if (_health.IsDead)
+            {
+                SetMoving(false);
                 return;
+            }
 
             if (_player == null)
             {
                 FindPlayer();
 
                 if (_player == null)
+                {
+                    SetMoving(false);
                     return;
+                }
             }
 
             Vector3 toPlayer = _player.position - transform.position;
@@ -45,17 +53,31 @@ namespace FPSGame
 
                 if (dir.sqrMagnitude > 0.01f)
                     transform.rotation = Quaternion.LookRotation(dir);
-            }
-            else if (Time.time >= _nextAttackTime)
-            {
-                FPSHealth playerHealth = _player.GetComponent<FPSHealth>();
 
-                if (playerHealth != null && !playerHealth.IsDead)
+                SetMoving(true);
+            }
+            else
+            {
+                SetMoving(false);
+
+                if (Time.time >= _nextAttackTime)
                 {
-                    playerHealth.TakeDamage(attackDamage);
-                    _nextAttackTime = Time.time + attackCooldown;
+                    FPSHealth playerHealth = _player.GetComponent<FPSHealth>();
+
+                    if (playerHealth != null && !playerHealth.IsDead)
+                    {
+                        _animator?.SetTrigger("Attack");
+                        playerHealth.TakeDamage(attackDamage);
+                        _nextAttackTime = Time.time + attackCooldown;
+                    }
                 }
             }
+        }
+
+        void SetMoving(bool moving)
+        {
+            if (_animator != null)
+                _animator.SetBool("isMoving", moving);
         }
 
         void FindPlayer()
