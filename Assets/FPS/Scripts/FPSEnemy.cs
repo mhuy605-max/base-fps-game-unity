@@ -9,22 +9,35 @@ namespace FPSGame
         public float attackRange = 1.5f;
         public float attackCooldown = 1f;
         public int attackDamage = 10;
+        public float destroyDelayAfterDeath = 3f;
 
         Transform _player;
         FPSHealth _health;
         Animator _animator;
+        Collider _collider;
         float _nextAttackTime;
+        bool _dead;
 
         void Awake()
         {
             _health = GetComponent<FPSHealth>();
             _animator = GetComponent<Animator>();
+            _collider = GetComponent<Collider>();
+
+            _health.OnDied += HandleDeath;
+
             FindPlayer();
+        }
+
+        void OnDestroy()
+        {
+            if (_health != null)
+                _health.OnDied -= HandleDeath;
         }
 
         void Update()
         {
-            if (_health.IsDead)
+            if (_dead || _health.IsDead)
             {
                 SetMoving(false);
                 return;
@@ -72,6 +85,23 @@ namespace FPSGame
                     }
                 }
             }
+        }
+
+        void HandleDeath(FPSHealth health)
+        {
+            if (_dead)
+                return;
+
+            _dead = true;
+            SetMoving(false);
+
+            if (_collider != null)
+                _collider.enabled = false;
+
+            _animator?.SetTrigger("Die");
+
+            FPSGameManager.Instance?.RegisterKill();
+            Destroy(gameObject, destroyDelayAfterDeath);
         }
 
         void SetMoving(bool moving)

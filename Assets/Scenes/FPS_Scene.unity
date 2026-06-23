@@ -271,7 +271,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPSGame.FPSHealth
   maxHealth: 100
-  destroyOnDeath: 1
+  destroyOnDeath: 0
   isPlayer: 0
 --- !u!136 &36973589
 CapsuleCollider:
@@ -6173,7 +6173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPSGame.FPSHealth
   maxHealth: 100
-  destroyOnDeath: 1
+  destroyOnDeath: 0
   isPlayer: 0
 --- !u!136 &998601058
 CapsuleCollider:
@@ -7025,7 +7025,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPSGame.FPSHealth
   maxHealth: 100
-  destroyOnDeath: 1
+  destroyOnDeath: 0
   isPlayer: 0
 --- !u!136 &1238039878
 CapsuleCollider:
