@@ -16,6 +16,7 @@ namespace FPSGame
         public float reloadTime = 1.4f;
 
         [Header("Effects")]
+        public Transform muzzlePoint;
         public Color hitColor = Color.red;
         public float hitFlashDuration = 0.05f;
 
@@ -97,8 +98,8 @@ namespace FPSGame
                 if (health != null && !health.isPlayer)
                     health.TakeDamage(damage);
             }
-
-            ShowTracer(ray.origin, end);
+          Vector3 tracerStart = muzzlePoint != null ? muzzlePoint.position : ray.origin;
+            ShowTracer(tracerStart, end);
         }
 
         void StartReload()

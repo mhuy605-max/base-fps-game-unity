@@ -325,6 +325,7 @@ MonoBehaviour:
   fireRate: 0.12
   magazineSize: 30
   reloadTime: 1.4
+  muzzlePoint: {fileID: 1688236893}
   hitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   hitFlashDuration: 0.05
 --- !u!114 &156500805
@@ -2821,8 +2822,8 @@ Transform:
   m_GameObject: {fileID: 1688236892}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.00481, y: -0.00009, z: 0.00028}
-  m_LocalScale: {x: 1.0141, y: 1.0141, z: 1.0141}
+  m_LocalPosition: {x: -0.004825, y: 0.000034, z: 0.000247}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1348513707}
