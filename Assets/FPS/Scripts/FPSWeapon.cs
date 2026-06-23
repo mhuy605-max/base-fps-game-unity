@@ -16,6 +16,7 @@ namespace FPSGame
         public float reloadTime = 1.4f;
 
         [Header("Effects")]
+        public ParticleSystem muzzleFlash;
         public Transform muzzlePoint;
         public Color hitColor = Color.red;
         public float hitFlashDuration = 0.05f;
@@ -84,6 +85,8 @@ namespace FPSGame
             _nextFireTime = Time.time + fireRate;
             _ammo--;
             FPSGameManager.Instance?.NotifyAmmoChanged(_ammo, magazineSize);
+            if (muzzleFlash != null)
+    muzzleFlash.Play();
 
             if (aimCamera == null)
                 return;
