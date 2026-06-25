@@ -61,12 +61,20 @@ namespace FPSGame
             }
         }
 
-        IEnumerator FiringGun()
-        {
-            gunFire.Play();
-            gunModel.GetComponentInChildren<Animator>().Play("Gunfire");
-            yield return new WaitForSeconds(fireRate);
-        }
+IEnumerator FiringGun()
+{
+    if (gunFire != null)
+        gunFire.Play();
+
+    Animator anim = gunModel.GetComponentInChildren<Animator>();
+    if (anim != null)
+    {
+        anim.Play("Gunfire", 0, 0f);
+        anim.Update(0f);
+    }
+
+    yield return new WaitForSeconds(fireRate);
+}
 #if ENABLE_INPUT_SYSTEM
         public void OnShoot(InputAction.CallbackContext context)
         {
