@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace FPSGame
 {
     [RequireComponent(typeof(FPSHealth))]
+    [RequireComponent(typeof(NavMeshAgent))]
     public class FPSEnemy : MonoBehaviour
     {
         public float moveSpeed = 2.5f;
@@ -27,6 +29,11 @@ public ParticleSystem muzzleFlash;
 public Transform[] patrolPoints;
 public float patrolReachDistance = 0.5f;
 
+[Header("Audio")]
+public AudioClip alertSound;
+public AudioClip shootSound;
+public AudioSource audioSource;
+
 enum EnemyState
 {
     Patrol,
@@ -39,11 +46,13 @@ EnemyState _state = EnemyState.Patrol;
 Vector3 _lastKnownPlayerPosition;
 int _patrolIndex;
 float _nextFireTime;
+bool _playerSpotted;
         Transform _player;
         FPSHealth _health;
         Animator _animator;
         Collider _collider;
-        float _nextAttackTime;
+        NavMeshAgent _agent;
+
         bool _dead;
 
         void Awake()
@@ -51,8 +60,15 @@ float _nextFireTime;
             _health = GetComponent<FPSHealth>();
             _animator = GetComponent<Animator>();
             _collider = GetComponent<Collider>();
+            _agent = GetComponent<NavMeshAgent>();
+
+            _agent.speed = moveSpeed;
+            _agent.angularSpeed = 360f;
+            _agent.acceleration = 20f;
+            _agent.stoppingDistance = patrolReachDistance;
 
             _health.OnDied += HandleDeath;
+            _health.OnHealthChanged += HandleHit;
 
             FindPlayer();
         }
@@ -60,7 +76,10 @@ float _nextFireTime;
         void OnDestroy()
         {
             if (_health != null)
+            {
                 _health.OnDied -= HandleDeath;
+                _health.OnHealthChanged -= HandleHit;
+            }
         }
 
 void Update()
@@ -73,11 +92,22 @@ void Update()
 
     if (_player == null)
         FindPlayer();
-
+if (_player == null)
+{
+    _state = EnemyState.Patrol;
+    Patrol();
+    return;
+}
     bool canSeePlayer = CanSeePlayer();
 
     if (canSeePlayer)
     {
+        if (!_playerSpotted)
+        {
+            _playerSpotted = true;
+            audioSource?.PlayOneShot(alertSound);
+        }
+
         _lastKnownPlayerPosition = _player.position;
 
         float distance = Vector3.Distance(transform.position, _player.position);
@@ -89,6 +119,7 @@ void Update()
     }
     else
     {
+        _playerSpotted = false;
         if (_state == EnemyState.Chase || _state == EnemyState.Attack)
             _state = EnemyState.Search;
     }
@@ -115,6 +146,7 @@ void Update()
 
             break;
     }
+    Debug.Log($"{name} State: {_state}");
 }
 bool CanSeePlayer()
 {
@@ -147,19 +179,9 @@ bool CanSeePlayer()
 }
 void MoveTo(Vector3 target)
 {
-    Vector3 toTarget = target - transform.position;
-    toTarget.y = 0f;
-
-    if (toTarget.magnitude <= 0.1f)
-    {
-        SetMoving(false);
-        return;
-    }
-
-    Vector3 dir = toTarget.normalized;
-    transform.position += dir * moveSpeed * Time.deltaTime;
-    transform.rotation = Quaternion.LookRotation(dir);
-
+    if (!_agent.isOnNavMesh) return;
+    _agent.isStopped = false;
+    _agent.SetDestination(target);
     SetMoving(true);
 }
 void Patrol()
@@ -173,21 +195,20 @@ void Patrol()
     Transform point = patrolPoints[_patrolIndex];
 
     if (point == null)
-        return;
-
-    Vector3 toPoint = point.position - transform.position;
-    toPoint.y = 0f;
-
-    if (toPoint.magnitude <= patrolReachDistance)
     {
         _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
         return;
     }
 
-    MoveTo(point.position);
+    // advance waypoint when agent has an active path and is close enough
+    if (_agent.hasPath && !_agent.pathPending && _agent.remainingDistance <= patrolReachDistance)
+        _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
+
+    MoveTo(patrolPoints[_patrolIndex].position);
 }
 void ShootAtPlayer()
 {
+    if (_agent.isOnNavMesh) _agent.isStopped = true;
     SetMoving(false);
 
     if (_player == null)
@@ -200,6 +221,7 @@ void ShootAtPlayer()
         return;
 
     _animator?.SetTrigger("Attack");
+    audioSource?.PlayOneShot(shootSound);
 
     if (muzzleFlash != null)
         muzzleFlash.Play();
@@ -252,6 +274,12 @@ void OnDrawGizmosSelected()
     }
 }
 
+        void HandleHit(int current, int max)
+        {
+            if (_dead || _health.IsDead) return;
+            _animator?.SetTrigger("Hit");
+        }
+
         void HandleDeath(FPSHealth health)
         {
             if (_dead)
@@ -260,6 +288,7 @@ void OnDrawGizmosSelected()
             _dead = true;
             SetMoving(false);
 
+            if (_agent != null && _agent.isOnNavMesh) _agent.isStopped = true;
             if (_collider != null)
                 _collider.enabled = false;
 
