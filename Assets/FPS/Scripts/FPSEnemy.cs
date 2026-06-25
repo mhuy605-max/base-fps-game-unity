@@ -32,6 +32,8 @@ public float patrolReachDistance = 0.5f;
 [Header("Audio")]
 public AudioClip alertSound;
 public AudioClip shootSound;
+public AudioClip hitSound;
+public AudioClip deathSound;
 public AudioSource audioSource;
 
 enum EnemyState
@@ -61,6 +63,9 @@ bool _playerSpotted;
             _animator = GetComponent<Animator>();
             _collider = GetComponent<Collider>();
             _agent = GetComponent<NavMeshAgent>();
+
+            if (patrolPoints != null && patrolPoints.Length > 0)
+                _patrolIndex = Random.Range(0, patrolPoints.Length);
 
             _agent.speed = moveSpeed;
             _agent.angularSpeed = 360f;
@@ -177,6 +182,14 @@ bool CanSeePlayer()
 
     return false;
 }
+int GetNextPatrolIndex()
+{
+    if (patrolPoints.Length == 1) return 0;
+    int next = Random.Range(0, patrolPoints.Length - 1);
+    if (next >= _patrolIndex) next++;
+    return next;
+}
+
 void MoveTo(Vector3 target)
 {
     if (!_agent.isOnNavMesh) return;
@@ -202,7 +215,7 @@ void Patrol()
 
     // advance waypoint when agent has an active path and is close enough
     if (_agent.hasPath && !_agent.pathPending && _agent.remainingDistance <= patrolReachDistance)
-        _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
+        _patrolIndex = GetNextPatrolIndex();
 
     MoveTo(patrolPoints[_patrolIndex].position);
 }
@@ -278,6 +291,7 @@ void OnDrawGizmosSelected()
         {
             if (_dead || _health.IsDead) return;
             _animator?.SetTrigger("Hit");
+            audioSource?.PlayOneShot(hitSound);
         }
 
         void HandleDeath(FPSHealth health)
@@ -293,6 +307,7 @@ void OnDrawGizmosSelected()
                 _collider.enabled = false;
 
             _animator?.SetTrigger("Die");
+            audioSource?.PlayOneShot(deathSound);
 
             FPSGameManager.Instance?.RegisterKill();
             Destroy(gameObject, destroyDelayAfterDeath);

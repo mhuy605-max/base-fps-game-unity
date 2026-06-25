@@ -98,37 +98,136 @@ void Start()
 
         void OnGUI()
         {
-            GUIStyle style = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 18,
-                fontStyle = FontStyle.Bold
-            };
-
-            int health = _playerHealth != null ? _playerHealth.CurrentHealth : 0;
-            int maxHealth = _playerHealth != null ? _playerHealth.maxHealth : 100;
-            int ammo = _playerWeapon != null ? _playerWeapon.CurrentAmmo : 0;
-            int mag = _playerWeapon != null ? _playerWeapon.magazineSize : 30;
-
-            GUI.Label(new Rect(16, 12, 400, 30), $"Health: {health} / {maxHealth}", style);
-            GUI.Label(new Rect(16, 36, 400, 30), $"Ammo: {ammo} / {mag}", style);
-            GUI.Label(new Rect(16, 60, 400, 30), $"Score: {score} / {killsToWin}", style);
+            int health    = _playerHealth != null ? _playerHealth.CurrentHealth : 0;
+            int maxHealth = _playerHealth != null ? _playerHealth.maxHealth     : 100;
+            int ammo      = _playerWeapon != null ? _playerWeapon.CurrentAmmo   : 0;
+            int mag       = _playerWeapon != null ? _playerWeapon.magazineSize  : 30;
 
             if (showCrosshair && !_gameOver)
                 DrawCrosshair();
 
+            DrawHUD(health, maxHealth, ammo, mag);
+
             if (_gameOver)
+                DrawGameOver();
+        }
+
+        void DrawHUD(int health, int maxHealth, int ammo, int mag)
+        {
+            float sw = Screen.width;
+            float sh = Screen.height;
+
+            Color panel    = new Color(0f, 0f, 0f, 0.55f);
+            Color barBg    = new Color(0f, 0f, 0f, 0.7f);
+            Color barGreen = new Color(0.18f, 0.78f, 0.22f, 1f);
+            Color barYellow= new Color(0.9f,  0.75f, 0.1f,  1f);
+            Color barRed   = new Color(0.85f, 0.15f, 0.15f, 1f);
+            Color white    = Color.white;
+            Color dimWhite = new Color(1f, 1f, 1f, 0.55f);
+
+            GUIStyle bigNum = new GUIStyle(GUI.skin.label)
             {
-                GUIStyle big = new GUIStyle(style) { fontSize = 32, alignment = TextAnchor.MiddleCenter };
-                GUI.Label(new Rect(0, Screen.height * 0.4f, Screen.width, 60), "You Win!", big);
-                GUI.Label(new Rect(0, Screen.height * 0.4f + 50, Screen.width, 40), "Press Play again to restart", style);
-            }
-            else
+                fontSize   = 36,
+                fontStyle  = FontStyle.Bold,
+                alignment  = TextAnchor.MiddleLeft,
+                normal     = { textColor = white }
+            };
+            GUIStyle smallNum = new GUIStyle(bigNum)
             {
-                GUIStyle hint = new GUIStyle(style) { fontSize = 14, fontStyle = FontStyle.Normal };
-                GUI.Label(new Rect(16, Screen.height - 36, 600, 30),
-                    "WASD move | Mouse look | LMB shoot | R reload | Shift sprint | Space jump",
-                    hint);
-            }
+                fontSize  = 20,
+                alignment = TextAnchor.MiddleLeft,
+                normal    = { textColor = dimWhite }
+            };
+            GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize  = 12,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                normal    = { textColor = dimWhite }
+            };
+            GUIStyle scoreStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize  = 16,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal    = { textColor = white }
+            };
+
+            // ── HEALTH (bottom-left) ──────────────────────────────────
+            float hpPanelW = 220f;
+            float hpPanelH = 70f;
+            float hpX      = 16f;
+            float hpY      = sh - hpPanelH - 16f;
+
+            DrawFilledRect(new Rect(hpX, hpY, hpPanelW, hpPanelH), panel);
+
+            GUI.Label(new Rect(hpX + 10f, hpY + 4f, 80f, 18f), "HEALTH", labelStyle);
+
+            float hpFrac  = Mathf.Clamp01((float)health / maxHealth);
+            Color hpColor = hpFrac > 0.5f ? barGreen : hpFrac > 0.25f ? barYellow : barRed;
+
+            float barX = hpX + 10f;
+            float barY = hpY + 24f;
+            float barW = hpPanelW - 20f;
+            float barH = 10f;
+            DrawFilledRect(new Rect(barX, barY, barW, barH), barBg);
+            DrawFilledRect(new Rect(barX, barY, barW * hpFrac, barH), hpColor);
+
+            GUI.Label(new Rect(hpX + 10f, hpY + 34f, 100f, 34f), health.ToString(), bigNum);
+
+            // ── AMMO (bottom-right) ───────────────────────────────────
+            float amPanelW = 180f;
+            float amPanelH = 70f;
+            float amX      = sw - amPanelW - 16f;
+            float amY      = sh - amPanelH - 16f;
+
+            DrawFilledRect(new Rect(amX, amY, amPanelW, amPanelH), panel);
+
+            GUIStyle ammoLabel = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleRight };
+            GUI.Label(new Rect(amX, amY + 4f, amPanelW - 10f, 18f), "AMMO", ammoLabel);
+
+            GUIStyle amBig = new GUIStyle(bigNum) { alignment = TextAnchor.MiddleRight };
+            GUIStyle amSml = new GUIStyle(smallNum) { alignment = TextAnchor.MiddleRight };
+
+            GUI.Label(new Rect(amX, amY + 22f, amPanelW - 10f, 40f), ammo.ToString(), amBig);
+            GUI.Label(new Rect(amX, amY + 46f, amPanelW - 10f, 22f), $"/ {mag}", amSml);
+
+            // ── SCORE (top-center) ────────────────────────────────────
+            float scW = 160f;
+            float scH = 36f;
+            float scX = (sw - scW) * 0.5f;
+            float scY = 12f;
+
+            DrawFilledRect(new Rect(scX, scY, scW, scH), panel);
+            GUI.Label(new Rect(scX, scY, scW, scH), $"KILLS  {score} / {killsToWin}", scoreStyle);
+        }
+
+        void DrawGameOver()
+        {
+            float sw = Screen.width;
+            float sh = Screen.height;
+
+            Color panel = new Color(0f, 0f, 0f, 0.75f);
+            DrawFilledRect(new Rect(sw * 0.3f, sh * 0.3f, sw * 0.4f, sh * 0.35f), panel);
+
+            GUIStyle title = new GUIStyle(GUI.skin.label)
+            {
+                fontSize  = 40,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal    = { textColor = new Color(0.9f, 0.75f, 0.1f, 1f) }
+            };
+            GUIStyle sub = new GUIStyle(GUI.skin.label)
+            {
+                fontSize  = 18,
+                alignment = TextAnchor.MiddleCenter,
+                normal    = { textColor = new Color(1f, 1f, 1f, 0.8f) }
+            };
+            GUIStyle statStyle = new GUIStyle(sub) { fontSize = 16 };
+
+            GUI.Label(new Rect(0f, sh * 0.33f, sw, 50f), "GAME OVER", title);
+            GUI.Label(new Rect(0f, sh * 0.33f + 55f, sw, 30f), $"Final Score: {score} kills", sub);
+            GUI.Label(new Rect(0f, sh * 0.33f + 90f, sw, 26f), "Press Play to restart", statStyle);
         }
 
         void DrawCrosshair()
