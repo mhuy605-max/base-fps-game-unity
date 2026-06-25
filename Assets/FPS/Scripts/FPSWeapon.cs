@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -27,6 +28,9 @@ namespace FPSGame
         bool _reloading;
         LineRenderer _line;
 
+        [SerializeField] AudioSource gunFire;
+        [SerializeField] AudioSource gunReload;
+        [SerializeField] GameObject gunModel;
         void Awake()
         {
             _ammo = magazineSize;
@@ -57,17 +61,28 @@ namespace FPSGame
             }
         }
 
+        IEnumerator FiringGun()
+        {
+            gunFire.Play();
+            gunModel.GetComponentInChildren<Animator>().Play("GunAnimation");
+            yield return new WaitForSeconds(fireRate);
+        }
 #if ENABLE_INPUT_SYSTEM
         public void OnShoot(InputAction.CallbackContext context)
         {
-            if (context.performed)
+            if (context.performed){
+                StartCoroutine(FiringGun());
+                
                 TryFire();
+            }
         }
 
         public void OnReload(InputAction.CallbackContext context)
 {
-    if (context.performed)
+    if (context.performed){
+        gunReload.Play();
         StartReload();
+    }
 }
 #endif
 

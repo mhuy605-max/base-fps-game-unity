@@ -3,7 +3,22 @@ guid: 64b05db203f5b5649bc8d89111d9f8d4
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: akmat
+    second: {fileID: 2100000, guid: f7b44935295f98e49831844fab418484, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: akmat.001_color
+    second: {fileID: 2800000, guid: e8bfabdc221ed1444b8656a3b4795dba, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: akmat.001_normal
+    second: {fileID: 2800000, guid: 4a9ab36fcab403f4da2058f5ad080910, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
