@@ -29,6 +29,12 @@ public ParticleSystem muzzleFlash;
 public Transform[] patrolPoints;
 public float patrolReachDistance = 0.5f;
 
+[Header("Behaviour")]
+public float reactionTime = 0.4f;
+public float rotationSpeed = 120f;
+public float minSpeed = 2f;
+public float maxSpeed = 3.5f;
+
 [Header("Audio")]
 public AudioClip alertSound;
 public AudioClip shootSound;
@@ -49,6 +55,8 @@ Vector3 _lastKnownPlayerPosition;
 int _patrolIndex;
 float _nextFireTime;
 bool _playerSpotted;
+float _reactionTimer;
+bool _reacting;
         Transform _player;
         FPSHealth _health;
         Animator _animator;
@@ -67,9 +75,9 @@ bool _playerSpotted;
             if (patrolPoints != null && patrolPoints.Length > 0)
                 _patrolIndex = Random.Range(0, patrolPoints.Length);
 
-            _agent.speed = moveSpeed;
+            _agent.speed = Random.Range(minSpeed, maxSpeed);
             _agent.angularSpeed = 360f;
-            _agent.acceleration = 20f;
+            _agent.acceleration = 8f;
             _agent.stoppingDistance = patrolReachDistance;
 
             _health.OnDied += HandleDeath;
@@ -107,13 +115,29 @@ if (_player == null)
 
     if (canSeePlayer)
     {
+        _lastKnownPlayerPosition = _player.position;
+
         if (!_playerSpotted)
         {
-            _playerSpotted = true;
-            audioSource?.PlayOneShot(alertSound);
-        }
+            if (!_reacting)
+            {
+                _reacting = true;
+                _reactionTimer = reactionTime;
+            }
 
-        _lastKnownPlayerPosition = _player.position;
+            _reactionTimer -= Time.deltaTime;
+
+            if (_reactionTimer <= 0f)
+            {
+                _playerSpotted = true;
+                _reacting = false;
+                audioSource?.PlayOneShot(alertSound);
+            }
+            else
+            {
+                return; // still reacting, don't chase yet
+            }
+        }
 
         float distance = Vector3.Distance(transform.position, _player.position);
 
@@ -125,6 +149,7 @@ if (_player == null)
     else
     {
         _playerSpotted = false;
+        _reacting = false;
         if (_state == EnemyState.Chase || _state == EnemyState.Attack)
             _state = EnemyState.Search;
     }
@@ -228,7 +253,8 @@ void ShootAtPlayer()
         return;
 
     Vector3 lookPos = new Vector3(_player.position.x, transform.position.y, _player.position.z);
-    transform.LookAt(lookPos);
+    Quaternion targetRot = Quaternion.LookRotation(lookPos - transform.position);
+    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
 
     if (Time.time < _nextFireTime)
         return;
@@ -292,6 +318,18 @@ void OnDrawGizmosSelected()
             if (_dead || _health.IsDead) return;
             _animator?.SetTrigger("Hit");
             audioSource?.PlayOneShot(hitSound);
+
+            if (_player != null)
+            {
+                Vector3 lookPos = new Vector3(_player.position.x, transform.position.y, _player.position.z);
+                transform.rotation = Quaternion.LookRotation(lookPos - transform.position);
+
+                // getting hit reveals the player regardless of detection range
+                _lastKnownPlayerPosition = _player.position;
+                _playerSpotted = true;
+                _reacting = false;
+                _state = EnemyState.Chase;
+            }
         }
 
         void HandleDeath(FPSHealth health)
